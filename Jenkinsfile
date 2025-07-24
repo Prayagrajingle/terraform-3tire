@@ -7,7 +7,8 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/Prayagrajingle/terraform-3tire.git
+                git 'https://github.com/Prayagrajingle/terraform-3tire.git'
+
 '
             }
         }
