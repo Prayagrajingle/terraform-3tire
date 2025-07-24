@@ -7,9 +7,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/Prayagrajingle/terraform-3tire.git'
-
-'
+                git branch: 'main', url: 'https://github.com/Prayagrajingle/terraform-3tire.git'
             }
         }
         stage('Init Terraform') {
