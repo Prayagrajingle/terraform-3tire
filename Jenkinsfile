@@ -1,35 +1,54 @@
 pipeline {
-    agent any
+
+    parameters {
+        booleanParam(name: 'autoApprove', defaultValue: false, description: 'Automatically run apply after generating plan?')
+    } 
     environment {
-        AWS_ACCESS_KEY_ID = credentials('aws-access-key')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
+        AWS_ACCESS_KEY_ID     = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
     }
+
+   agent  any
     stages {
-        stage('Checkout') {
+        stage('checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Prayagrajingle/terraform-3tire.git'
+                 script{
+                        dir("terraform")
+                        {
+                            git "https://github.com/Prayagrajingle/terraform-3tire.git"
+                        }
+                    }
+                }
             }
-        }
-        stage('Init Terraform') {
-            steps {
-                sh 'terraform init'
-            }
-        }
-        stage('Validate') {
-            steps {
-                sh 'terraform validate'
-            }
-        }
+
         stage('Plan') {
             steps {
-                sh 'terraform plan -out=tfplan'
+                sh 'pwd;cd terraform/ ; terraform init'
+                sh "pwd;cd terraform/ ; terraform plan -out tfplan"
+                sh 'pwd;cd terraform/ ; terraform show -no-color tfplan > tfplan.txt'
             }
         }
+        stage('Approval') {
+           when {
+               not {
+                   equals expected: true, actual: params.autoApprove
+               }
+           }
+
+           steps {
+               script {
+                    def plan = readFile 'terraform/tfplan.txt'
+                    input message: "Do you want to apply the plan?",
+                    parameters: [text(name: 'Plan', description: 'Please review the plan', defaultValue: plan)]
+               }
+           }
+       }
+
         stage('Apply') {
             steps {
-                input message: "Apply changes?"
-                sh 'terraform apply tfplan'
+                sh "pwd;cd terraform/ ; terraform apply -input=false tfplan"
             }
         }
     }
-}
+
+  }
